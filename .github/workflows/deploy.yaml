@@ -1,0 +1,54 @@
+name: Deploy to ECS Fargate
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ap-southeast-2
+  ECR_REPOSITORY: ecs-fargate-app
+  ECS_CLUSTER: ecs-fargate-cluster
+  ECS_SERVICE: ecs-fargate-service
+  CONTAINER_NAME: nginx
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::040235833373:role/github-actions-ecs-deploy-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin 040235833373.dkr.ecr.ap-southeast-2.amazonaws.com
+
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REPOSITORY .
+
+      - name: Tag image
+        run: |
+          docker tag $ECR_REPOSITORY:latest 040235833373.dkr.ecr.ap-southeast-2.amazonaws.com/$ECR_REPOSITORY:latest
+
+      - name: Push image
+        run: |
+          docker push 040235833373.dkr.ecr.ap-southeast-2.amazonaws.com/$ECR_REPOSITORY:latest
+
+      - name: Force ECS deployment
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --force-new-deployment
