@@ -52,3 +52,4 @@ jobs:
             --cluster $ECS_CLUSTER \
             --service $ECS_SERVICE \
             --force-new-deployment
+              --region ${{ env.AWS_REGION }}
