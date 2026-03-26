@@ -1,3 +1,25 @@
+# variables.tf
+variable "aws_account_id" {
+  description = "Your AWS account ID"
+  type        = string
+}
+
+# iam.tf
+
+# OIDC Provider
+resource "aws_iam_openid_connect_provider" "github_actions" {
+  url = "https://token.actions.githubusercontent.com"
+
+  client_id_list = [
+    "sts.amazonaws.com"
+  ]
+
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1"
+  ]
+}
+
+# IAM Role
 resource "aws_iam_role" "github_actions_role" {
   name = "github-actions-ecs-deploy-role"
 
@@ -7,7 +29,7 @@ resource "aws_iam_role" "github_actions_role" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = "arn:aws:iam::040235853373:oidc-provider/token.actions.githubusercontent.com"
+          Federated = aws_iam_openid_connect_provider.github_actions.arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -21,6 +43,7 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
+# Policy Attachment
 resource "aws_iam_role_policy_attachment" "github_actions_admin" {
   role       = aws_iam_role.github_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
