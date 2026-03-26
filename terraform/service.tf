@@ -9,7 +9,7 @@ resource "aws_ecs_task_definition" "app" {
   container_definitions = jsonencode([
     {
       name      = "nginx"
-      image     = "nginx:latest"
+      image = "040235833373.dkr.ecr.ap-southeast-2.amazonaws.com/ecs-fargate-app:latest"
       essential = true
 
       portMappings = [
